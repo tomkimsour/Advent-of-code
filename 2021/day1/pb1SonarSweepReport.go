@@ -71,7 +71,6 @@ func batchIncreament(file1, file2, file3 *os.File) int {
 			increase++
 		}
 		previous = sum
-		fmt.Println(sum)
 	}
 	return increase - 1
 }
