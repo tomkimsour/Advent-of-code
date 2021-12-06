@@ -8,57 +8,69 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/tomkimsour/Advent-of-code/convert"
 )
 
-func initChartSet(lines []string, nbChart int) [][][]int {
+type board struct {
+	grid      [][]int
+	checkGrid [][]bool
+	unmarked  int
+	lastCall  int
+}
 
-	setCharts := make([][][]int, nbChart)
-	for i := 0; i < nbChart; i++ {
-		setCharts[i] = make([][]int, 5)
-		for j := 0; j < 5; j++ {
-			setCharts[i][j] = make([]int, 5)
-		}
+func initBoards(lines []string, nbChart int) []board {
+	boardList := make([]board, nbChart)
+
+	bingoGrid := make([][]int, 5)
+	for i := 0; i < 5; i++ {
+		bingoGrid[i] = make([]int, 5)
+	}
+
+	checkGrid := make([][]bool, 5)
+	for i := 0; i < 5; i++ {
+		checkGrid[i] = make([]bool, 5)
 	}
 
 	for i := 0; i < nbChart; i++ {
+		sum := 0
 		for j := 0; j < 5; j++ {
 			line := regexp.MustCompile(`[0-9]+`).FindAllString(lines[i*6+j], 5)
 			for k := 0; k < 5; k++ {
 				value, _ := strconv.Atoi(line[k])
-				setCharts[i][j][k] = value
+				sum = sum + value
+				bingoGrid[j][k] = value
+				checkGrid[j][k] = false
 			}
 		}
+		boardList[i].grid = bingoGrid
+		boardList[i].checkGrid = checkGrid
+		boardList[i].unmarked = sum
 	}
 
-	return setCharts
+	return boardList
 }
 
-func initCheckBoard(nbCharts int) [][][]bool {
-	checkBoard := make([][][]bool, nbCharts)
-	for k := 0; k < nbCharts; k++ {
-		checkBoard[k] = make([][]bool, 5)
-		for i := 0; i < 5; i++ {
-			checkBoard[k][i] = make([]bool, 5)
-		}
-	}
-
-	for k := 0; k < nbCharts; k++ {
-		for i := 0; i < 5; i++ {
-			for j := 0; j < 5; j++ {
-				checkBoard[k][i][j] = false
-			}
-		}
-	}
-
-	return checkBoard
-}
-
-func isWin(board [][]bool) bool {
-	// check lines
-	for line := 0; line < 5; line++ {
-		var win bool = true
+func playMove(bingoBoard board, valueInt int) board {
+	for i := 0; i < 5; i++ {
 		for j := 0; j < 5; j++ {
-			win = board[line][j] && win
+			if bingoBoard.grid[i][j] == valueInt {
+				bingoBoard.checkGrid[i][j] = true
+				bingoBoard.unmarked = bingoBoard.unmarked - valueInt
+				bingoBoard.lastCall = valueInt
+			}
+		}
+	}
+
+	return bingoBoard
+}
+
+func isGameWon(bingoBoard board) bool {
+	// check lines
+	for row := 0; row < 5; row++ {
+		var win bool = true
+		for col := 0; col < 5; col++ {
+			win = bingoBoard.checkGrid[row][col] && win
 		}
 		if win {
 			return true
@@ -69,40 +81,13 @@ func isWin(board [][]bool) bool {
 	for col := 0; col < 5; col++ {
 		var win bool = true
 		for row := 0; row < 5; row++ {
-			win = board[row][col] && win
+			win = bingoBoard.checkGrid[row][col] && win
 		}
 		if win {
 			return true
 		}
 	}
-
 	return false
-}
-
-func playMove(checkBoard [][]bool, chart [][]int, valueInt int) [][]bool {
-	for i := 0; i < 5; i++ {
-		for j := 0; j < 5; j++ {
-			if chart[i][j] == valueInt {
-				checkBoard[i][j] = true
-			}
-		}
-	}
-	return checkBoard
-}
-
-func getMarkedUnmarked(winningBoard [][]int, winningCheckBoard [][]bool) (int, int) {
-	var sumMarked int = 0
-	var sumUnmarked int = 0
-	for i := 0; i < 5; i++ {
-		for j := 0; j < 5; j++ {
-			if winningCheckBoard[i][j] {
-				sumMarked = sumMarked + winningBoard[i][j]
-			} else {
-				sumUnmarked = sumUnmarked + winningBoard[i][j]
-			}
-		}
-	}
-	return sumMarked, sumUnmarked
 }
 
 func pb1(lines []string) {
@@ -111,33 +96,30 @@ func pb1(lines []string) {
 	lines = lines[2:]
 	nbChart := len(lines)/6 + 1
 
-	chartSet := initChartSet(lines, nbChart)
-	checkBoard := initCheckBoard(nbChart)
+	boardList := initBoards(lines, nbChart)
 
 	var isWon bool = false
-	var winningBoard [][]int
-	var winningCheckBoard [][]bool
+	var winningBoard board
+
 	for value := 0; value < len(draw) && !isWon; value++ {
-		valueInt, _ := strconv.Atoi(draw[value])
+		valueInt := convert.StringToInt(draw[value])
 		for i := 0; i < nbChart; i++ {
-			checkBoard[i] = playMove(checkBoard[i], chartSet[i], valueInt)
+			boardList[i] = playMove(boardList[i], valueInt)
 			if value < 5 {
 				continue
 			}
-			isWon = isWin(checkBoard[i])
+			isWon = isGameWon(boardList[i])
 			if isWon {
 				fmt.Printf("someone won at iter : %d\n", value)
-				winningBoard = chartSet[i]
-				winningCheckBoard = checkBoard[i]
+				winningBoard = boardList[i]
 				break
 			}
 		}
 	}
 
-	fmt.Println(winningBoard)
+	fmt.Println(winningBoard.grid)
+	fmt.Println(winningBoard.lastCall * winningBoard.unmarked)
 
-	marked, unmarked := getMarkedUnmarked(winningBoard, winningCheckBoard)
-	fmt.Println(marked * unmarked)
 }
 
 func pb2(lines []string) {
