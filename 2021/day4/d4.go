@@ -17,25 +17,26 @@ type board struct {
 	checkGrid [][]bool
 	unmarked  int
 	lastCall  int
+	solved    bool
 }
 
 func initBoards(lines []string, nbChart int) []board {
 	boardList := make([]board, nbChart)
 
-	bingoGrid := make([][]int, 5)
-	for i := 0; i < 5; i++ {
-		bingoGrid[i] = make([]int, 5)
-	}
-
-	checkGrid := make([][]bool, 5)
-	for i := 0; i < 5; i++ {
-		checkGrid[i] = make([]bool, 5)
-	}
-
 	for i := 0; i < nbChart; i++ {
 		sum := 0
+		bingoGrid := make([][]int, 5)
+		for i := 0; i < 5; i++ {
+			bingoGrid[i] = make([]int, 5)
+		}
+
+		checkGrid := make([][]bool, 5)
+		for i := 0; i < 5; i++ {
+			checkGrid[i] = make([]bool, 5)
+		}
 		for j := 0; j < 5; j++ {
 			line := regexp.MustCompile(`[0-9]+`).FindAllString(lines[i*6+j], 5)
+
 			for k := 0; k < 5; k++ {
 				value, _ := strconv.Atoi(line[k])
 				sum = sum + value
@@ -46,8 +47,10 @@ func initBoards(lines []string, nbChart int) []board {
 		boardList[i].grid = bingoGrid
 		boardList[i].checkGrid = checkGrid
 		boardList[i].unmarked = sum
+		boardList[i].solved = false
+		// fmt.Println(i)
+		// fmt.Println(boardList[i])
 	}
-
 	return boardList
 }
 
@@ -92,7 +95,7 @@ func isGameWon(bingoBoard board) bool {
 
 func pb1(lines []string) {
 	draw := strings.Split(lines[0], ",")
-	fmt.Println(draw)
+	// fmt.Println(draw)
 	lines = lines[2:]
 	nbChart := len(lines)/6 + 1
 
@@ -103,7 +106,7 @@ func pb1(lines []string) {
 
 	for value := 0; value < len(draw) && !isWon; value++ {
 		valueInt := convert.StringToInt(draw[value])
-		for i := 0; i < nbChart; i++ {
+		for i := 0; i < nbChart && !isWon; i++ {
 			boardList[i] = playMove(boardList[i], valueInt)
 			if value < 5 {
 				continue
@@ -116,14 +119,43 @@ func pb1(lines []string) {
 			}
 		}
 	}
-
-	fmt.Println(winningBoard.grid)
 	fmt.Println(winningBoard.lastCall * winningBoard.unmarked)
 
 }
 
 func pb2(lines []string) {
+	draw := strings.Split(lines[0], ",")
+	// fmt.Println(draw)
+	lines = lines[2:]
+	nbChart := len(lines)/6 + 1
 
+	boardList := initBoards(lines, nbChart)
+
+	var isWon bool = false
+	var winningBoard board
+
+	var allwin int = 0
+	for value := 0; value < len(draw); value++ {
+		valueInt := convert.StringToInt(draw[value])
+		for i := 0; i < nbChart; i++ {
+			boardList[i] = playMove(boardList[i], valueInt)
+			if value < 5 {
+				continue
+			}
+			isWon = isGameWon(boardList[i])
+			if isWon && !boardList[i].solved {
+				boardList[i].solved = true
+				allwin++
+				fmt.Println(allwin)
+				if allwin == nbChart {
+					fmt.Println(boardList[i])
+					winningBoard = boardList[i]
+					fmt.Println(winningBoard.lastCall * winningBoard.unmarked)
+					break
+				}
+			}
+		}
+	}
 }
 
 func main() {
