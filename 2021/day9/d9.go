@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/tomkimsour/Advent-of-code/convert"
@@ -114,8 +115,8 @@ func getNbBassin(depthMap [100][100]position, row, col, previousValue int) int {
 	return nb
 }
 
-func findBasinsSize(depthMap [100][100]position) list.List {
-	var basinList list.List
+func findBasinsSize(depthMap [100][100]position) []int {
+	var basinList []int
 
 	for row, line := range depthMap {
 		for col, pos := range line {
@@ -143,7 +144,8 @@ func findBasinsSize(depthMap [100][100]position) list.List {
 
 			if isMinimum {
 				nbBasins := getNbBassin(depthMap, row, col, -1)
-				basinList.PushBack(nbBasins)
+				fmt.Println(nbBasins)
+				basinList = append(basinList, nbBasins)
 			}
 		}
 	}
@@ -151,35 +153,18 @@ func findBasinsSize(depthMap [100][100]position) list.List {
 	return basinList
 }
 
-func maxList(basinList *list.List) (int, *list.Element) {
-
-	max := 0
-	var elem *list.Element
-	for e := basinList.Front(); e != nil; e = e.Next() {
-		if max < e.Value.(int) {
-			max = e.Value.(int)
-			elem = e
-		}
-	}
-	basinList.Remove(elem)
-	fmt.Println(basinList.Len())
-	return max, elem
-}
-
-func getMax(basinList list.List) (int, int, int) {
-	m1, e := maxList(&basinList)
-	basinList.Remove(e)
-
-	m2, e := maxList(&basinList)
-	basinList.Remove(e)
-
-	m3, e := maxList(&basinList)
-	basinList.Remove(e)
-
+func getMax(basinList []int) (int, int, int) {
+	sort.Ints(basinList)
+	// size := len(basinList)
+	fmt.Println(basinList)
+	// m1 := basinList[size-1]
+	// m2 := basinList[size-2]
+	// m3 := basinList[size-3]
 	// fmt.Println(m1)
 	// fmt.Println(m2)
 	// fmt.Println(m3)
-	return m1, m2, m3
+	return 1, 2, 3
+	// return m1, m2, m3
 }
 
 func pb2(lines []string) {
@@ -202,6 +187,6 @@ func main() {
 		lines = append(lines, scanner.Text())
 	}
 
-	pb1(lines)
+	// pb1(lines)
 	pb2(lines)
 }
